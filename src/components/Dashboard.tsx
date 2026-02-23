@@ -7,11 +7,15 @@ const GOOGLE_SCRIPT_URL = (import.meta && (import.meta as any).env) ? (import.me
 const API_KEY = (import.meta && (import.meta as any).env) ? (import.meta as any).env.VITE_API_KEY : "";
 
 interface RawData {
-  shift: string;
+  shiftRank1: string;
   rank1: string;
+  shiftRank2: string;
   rank2: string;
+  shiftRank3: string;
   rank3: string;
+  shiftRank4: string;
   rank4: string;
+  shiftRank5: string;
   rank5: string;
 }
 
@@ -69,7 +73,7 @@ export function Dashboard() {
         setRawData(jsonData.responses);
         setCapacities(jsonData.capacities || []);
       } else if (Array.isArray(jsonData)) {
-        // Fallback for old structure
+        // Fallback for old structure (though likely incompatible now)
         setRawData(jsonData);
         setCapacities([]);
       } else {
@@ -108,37 +112,41 @@ export function Dashboard() {
     });
 
     rawData.forEach(row => {
-      // Normalize Shift (handle "Shift 1", "1", etc.)
-      const shiftStr = String(row.shift).trim();
-      let shiftKey: 'shift1' | 'shift2' | 'shift3' | null = null;
-      
-      if (shiftStr.includes('1')) shiftKey = 'shift1';
-      else if (shiftStr.includes('2')) shiftKey = 'shift2';
-      else if (shiftStr.includes('3')) shiftKey = 'shift3';
+      // Iterate through all 5 ranks
+      for (let i = 1; i <= 5; i++) {
+        const rankKey = `rank${i}` as keyof RawData;
+        const shiftRankKey = `shiftRank${i}` as keyof RawData;
+        
+        const siteName = String(row[rankKey] || '').trim();
+        const shiftStr = String(row[shiftRankKey] || '').trim();
+        
+        if (!siteName) continue;
 
-      if (!shiftKey) return;
+        let shiftKey: 'shift1' | 'shift2' | 'shift3' | null = null;
+        if (shiftStr.includes('1')) shiftKey = 'shift1';
+        else if (shiftStr.includes('2')) shiftKey = 'shift2';
+        else if (shiftStr.includes('3')) shiftKey = 'shift3';
 
-      // We focus on Rank 1 as the primary selection
-      const siteName = String(row.rank1).trim();
-      if (!siteName) return;
+        if (!shiftKey) continue;
 
-      if (!stats.has(siteName)) {
-        // If site not in capacities list, add it with 0 capacity
-        stats.set(siteName, { 
-          name: siteName, 
-          shift1: 0, 
-          shift2: 0, 
-          shift3: 0, 
-          total: 0,
-          cap1: 0,
-          cap2: 0,
-          cap3: 0
-        });
+        if (!stats.has(siteName)) {
+          // If site not in capacities list, add it with 0 capacity
+          stats.set(siteName, { 
+            name: siteName, 
+            shift1: 0, 
+            shift2: 0, 
+            shift3: 0, 
+            total: 0,
+            cap1: 0,
+            cap2: 0,
+            cap3: 0
+          });
+        }
+
+        const siteStat = stats.get(siteName)!;
+        siteStat[shiftKey]++;
+        siteStat.total++;
       }
-
-      const siteStat = stats.get(siteName)!;
-      siteStat[shiftKey]++;
-      siteStat.total++;
     });
 
     return Array.from(stats.values());
@@ -231,35 +239,40 @@ export function Dashboard() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800">
-          <CardContent className="p-4">
-            <div className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Selections</div>
-            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-              {processedData.reduce((acc, curr) => acc + curr.total, 0)}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <Card className="col-span-2 md:col-span-2 border-stone-200 dark:border-stone-800">
+          <CardContent className="p-6">
+            <div className="text-sm font-medium text-stone-500 dark:text-stone-400">Total Selections</div>
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
+              <span className="text-4xl font-bold text-stone-900 dark:text-stone-100">
+                {processedData.reduce((acc, curr) => acc + curr.total, 0)}
+              </span>
+              <span className="text-lg font-medium text-stone-500 dark:text-stone-400">
+                ({Math.ceil(processedData.reduce((acc, curr) => acc + curr.total, 0) / 5)} people)
+              </span>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="text-sm font-medium text-stone-500">Shift 1 Total</div>
-            <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+          <CardContent className="p-6">
+            <div className="text-sm font-medium text-stone-500 dark:text-stone-400">Shift 1 Total</div>
+            <div className="mt-2 text-4xl font-bold text-stone-900 dark:text-stone-100">
               {processedData.reduce((acc, curr) => acc + curr.shift1, 0)}
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="text-sm font-medium text-stone-500">Shift 2 Total</div>
-            <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+          <CardContent className="p-6">
+            <div className="text-sm font-medium text-stone-500 dark:text-stone-400">Shift 2 Total</div>
+            <div className="mt-2 text-4xl font-bold text-stone-900 dark:text-stone-100">
               {processedData.reduce((acc, curr) => acc + curr.shift2, 0)}
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="text-sm font-medium text-stone-500">Shift 3 Total</div>
-            <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+          <CardContent className="p-6">
+            <div className="text-sm font-medium text-stone-500 dark:text-stone-400">Shift 3 Total</div>
+            <div className="mt-2 text-4xl font-bold text-stone-900 dark:text-stone-100">
               {processedData.reduce((acc, curr) => acc + curr.shift3, 0)}
             </div>
           </CardContent>
