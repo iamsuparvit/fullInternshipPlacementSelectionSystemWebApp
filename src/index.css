@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --tooltip-bg: #ffffff;
+  --tooltip-text: #1c1917;
+  --tooltip-cursor-bg: #f5f5f4;
+}
+
+@theme {
+  --color-tooltip-bg: #ffffff;
+  --color-tooltip-text: #1c1917;
+  --color-tooltip-cursor-bg: #f5f5f4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tooltip-bg: #1c1917;
+    --tooltip-text: #f5f5f4;
+    --tooltip-cursor-bg: #292524;
+  }
+}
+
+.dark {
+  --tooltip-bg: #1c1917;
+  --tooltip-text: #f5f5f4;
+  --tooltip-cursor-bg: #292524;
+}
