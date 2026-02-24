@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { Dashboard } from '@/components/Dashboard';
 import { GraduationCap, Moon, Sun } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
   const [isDark, setIsDark] = useState(() => {
@@ -48,6 +49,7 @@ export default function App() {
           <Dashboard />
         </div>
       </main>
+      <Analytics />
     </div>
   );
 }
