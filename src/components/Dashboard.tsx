@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCw, Search, ArrowUpDown, AlertCircle } from 'lucide-react';
+import { RefreshCw, Search, ArrowUpDown, AlertCircle, X } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Configuration from environment or defaults
 const GOOGLE_SCRIPT_URL = (import.meta && (import.meta as any).env) ? (import.meta as any).env.VITE_GOOGLE_SCRIPT_URL : "";
@@ -47,6 +48,30 @@ export function Dashboard() {
     key: 'total',
     direction: 'desc',
   });
+
+  const [selectedSite, setSelectedSite] = useState<SiteStats | null>(null);
+  const [modalShift, setModalShift] = useState<1 | 2 | 3>(1);
+
+  const chartData = useMemo(() => {
+    if (!selectedSite) return [];
+    
+    const counts = [0, 0, 0, 0, 0]; // Rank 1 to 5
+    
+    rawData.forEach(row => {
+      // Check Rank 1
+      if (String(row.rank1).trim() === selectedSite.name && String(row.shiftRank1).includes(String(modalShift))) counts[0]++;
+      // Check Rank 2
+      if (String(row.rank2).trim() === selectedSite.name && String(row.shiftRank2).includes(String(modalShift))) counts[1]++;
+      // Check Rank 3
+      if (String(row.rank3).trim() === selectedSite.name && String(row.shiftRank3).includes(String(modalShift))) counts[2]++;
+      // Check Rank 4
+      if (String(row.rank4).trim() === selectedSite.name && String(row.shiftRank4).includes(String(modalShift))) counts[3]++;
+      // Check Rank 5
+      if (String(row.rank5).trim() === selectedSite.name && String(row.shiftRank5).includes(String(modalShift))) counts[4]++;
+    });
+
+    return counts.map((count, i) => ({ name: `Rank ${i + 1}`, count }));
+  }, [selectedSite, modalShift, rawData]);
 
   const fetchData = async () => {
     if (!GOOGLE_SCRIPT_URL) {
@@ -341,7 +366,14 @@ export function Dashboard() {
                 </tr>
               ) : (
                 filteredAndSortedData.map((site) => (
-                  <tr key={site.name} className="hover:bg-stone-50 dark:hover:bg-stone-900/50 transition-colors">
+                  <tr 
+                    key={site.name} 
+                    className="hover:bg-stone-50 dark:hover:bg-stone-900/50 transition-colors cursor-pointer"
+                    onClick={() => {
+                      setSelectedSite(site);
+                      setModalShift(1);
+                    }}
+                  >
                     <td className="px-6 py-4 font-medium text-stone-900 dark:text-stone-100">
                       {site.name}
                     </td>
@@ -364,6 +396,134 @@ export function Dashboard() {
           </table>
         </div>
       </Card>
+
+      {/* Site Details Modal */}
+      {selectedSite && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="bg-white dark:bg-stone-900 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden border border-stone-200 dark:border-stone-800 animate-in fade-in zoom-in duration-200">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100">{selectedSite.name}</h2>
+                  <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+                    Selection Statistics by Rank
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setSelectedSite(null)} 
+                  className="p-2 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full transition-colors text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Shift Selection & Capacity */}
+              <div className="mb-6">
+                <div className="flex bg-stone-100 dark:bg-stone-800 p-1 rounded-lg mb-6">
+                  {[1, 2, 3].map((shift) => (
+                    <button
+                      key={shift}
+                      onClick={() => setModalShift(shift as 1 | 2 | 3)}
+                      className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                        modalShift === shift
+                          ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm'
+                          : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
+                      }`}
+                    >
+                      Shift {shift}
+                    </button>
+                  ))}
+                </div>
+
+                {(() => {
+                  const getShiftData = (shift: 1 | 2 | 3) => {
+                    if (shift === 1) return { count: selectedSite.shift1, cap: selectedSite.cap1 };
+                    if (shift === 2) return { count: selectedSite.shift2, cap: selectedSite.cap2 };
+                    return { count: selectedSite.shift3, cap: selectedSite.cap3 };
+                  };
+                  const { count, cap } = getShiftData(modalShift);
+                  const occupancy = cap > 0 ? (count / cap) * 100 : 0;
+                  const isOverCapacity = count > cap;
+                  const isFull = count === cap;
+
+                  return (
+                    <div className="p-4 bg-stone-50 dark:bg-stone-800/50 rounded-lg border border-stone-200 dark:border-stone-800">
+                      <div className="flex justify-between items-end mb-3">
+                        <div>
+                          <span className="text-sm font-medium text-stone-500 dark:text-stone-400">Occupancy</span>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-2xl font-bold text-stone-900 dark:text-stone-100">{count}</span>
+                            <span className="text-sm text-stone-400">/ {cap > 0 ? cap : '-'} seats</span>
+                          </div>
+                        </div>
+                        <div className={`text-sm font-bold ${
+                          cap === 0 ? 'text-stone-500' :
+                          isOverCapacity ? 'text-red-600 dark:text-red-400' :
+                          isFull ? 'text-amber-600 dark:text-amber-400' :
+                          'text-green-600 dark:text-green-400'
+                        }`}>
+                          {cap > 0 ? (isOverCapacity ? 'Over Capacity' : isFull ? 'Full' : 'Available') : 'No Limit'}
+                        </div>
+                      </div>
+                      
+                      <div className="h-3 w-full bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-500 ${
+                            cap === 0 ? 'bg-stone-400' :
+                            isOverCapacity ? 'bg-red-500' :
+                            isFull ? 'bg-amber-500' :
+                            'bg-green-500'
+                          }`}
+                          style={{ width: `${cap > 0 ? Math.min(occupancy, 100) : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Chart */}
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-stone-200)" opacity={0.5} />
+                    <XAxis 
+                      dataKey="name" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: 'currentColor', fontSize: 12 }} 
+                      dy={10}
+                    />
+                    <YAxis 
+                      allowDecimals={false} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: 'currentColor', fontSize: 12 }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'var(--tooltip-bg)', 
+                        color: 'var(--tooltip-text)',
+                        borderRadius: '8px', 
+                        border: '1px solid var(--color-stone-200, #e5e5e5)', 
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
+                      }}
+                      cursor={{ fill: 'var(--tooltip-cursor-bg, rgba(0,0,0,0.05))' }}
+                    />
+                    <Bar 
+                      dataKey="count" 
+                      fill="#3b82f6" 
+                      radius={[4, 4, 0, 0]} 
+                      barSize={40}
+                      name="Students"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
