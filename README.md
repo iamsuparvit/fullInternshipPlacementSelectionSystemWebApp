@@ -55,9 +55,18 @@ A real-time dashboard for visualizing internship placement selections. This appl
 
 This project requires a Google Apps Script backend to serve data from Google Sheets.
 
-1. Open your Google Sheet.
-2. Go to **Extensions > Apps Script**.
-3. Paste the following code into `Code.gs`:
+1. Open your Google Sheet, which contains the following columns:
+
+| student_name | student_id | sex | Shift 1 | Rank 1 | Shift 2 | Rank 2 | Shift 3 | Rank 3 | Shift 4 | Rank 4 | Shift 5 | Rank 5 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| e3b0c442 | 66310XXX33 | Female | 1 | BTS02 | 1 | BTS04 | 1 | BTS05 | 1 | CEN05 | 1 | CEN01 |
+| 8a7b6c5d | 66300XXX33 | Male | 1 | CEN17 | 1 | CHA01 | 2 | CHA01 | 1 | HPT04 | 2 | HPT04 |
+| 9f8e7d6c | 66310XXX33 | Female | 1 | FCN92 | 1 | FCN86 | 1 | HPT03 | 1 | BKK02 | 1 | BKK28 |
+| 1a2b3c4d | 66310XXX33 | Male | 1 | HPT04 | 2 | HPT04 | 1 | HPT01 | 2 | HPT03 | 2 | BTS14 |
+| 5e6f7a8b | 66300XXX33 | Female | 1 | FCN30 | 1 | BTS05 | 1 | FCN67 | 1 | BTS04 | 1 | BTS16 |
+
+3. Go to **Extensions > Apps Script**.
+4. Paste the following code into `Code.gs`:
 
 ```javascript
 const API_KEY = "YOUR_SECRET_KEY"; // Optional: For security
@@ -174,4 +183,4 @@ The output will be in the `dist` directory.
 
 ## License
 
-[MIT](LICENSE)
+This project is licensed under the terms of the MIT License. For complete details, refer to the [LICENSE](LICENSE) file.
