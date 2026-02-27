@@ -29,7 +29,7 @@ A real-time dashboard for visualizing internship placement selections. This appl
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/iamsuparvit/fullInternshipPlacementSelectionSystemWebApp.git
    cd rxcu85-placement-system
    ```
 
